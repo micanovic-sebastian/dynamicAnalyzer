@@ -1,0 +1,46 @@
+{
+  "blockedPackages": [
+    "javax.crypto"
+  ],
+  "blockedClasses": [
+    "java.io.FileInputStream",
+    "java.io.FileOutputStream",
+    "java.io.FileWriter"
+  ],
+  "blockedMethods": [
+    "java.lang.Runtime.exec",
+    "java.lang.ProcessBuilder.start",
+    "java.nio.file.Files.write",
+    "java.net.Socket.connect",
+    "java.lang.reflect.Method.invoke",
+    "java.lang.Class.forName",
+    "java.lang.System.getProperty",
+    "java.io.File.createNewFile",
+    "java.io.File.mkdir",
+    "java.io.File.delete",
+    "java.io.File.renameTo",
+    "java.nio.file.Files.readAllBytes",
+    "java.nio.file.Files.readString",
+    "java.nio.file.Files.newInputStream",
+    "java.nio.file.Files.newOutputStream",
+    "java.nio.file.Files.createFile",
+    "java.nio.file.Files.createDirectory",
+    "java.nio.file.Files.delete",
+    "java.nio.file.Files.move",
+    "java.nio.file.Files.copy",
+    "java.lang.Class.getConstructor",
+    "java.lang.Class.getField",
+    "java.lang.reflect.Constructor.newInstance",
+    "java.lang.reflect.AccessibleObject.setAccessible",
+    "java.net.URL.openConnection",
+    "java.net.URL.openStream",
+    "java.net.ServerSocket.bind",
+    "java.net.DatagramSocket.send",
+    "java.lang.System.exit",
+    "java.lang.System.getProperties",
+    "java.lang.System.getenv",
+    "java.lang.Runtime.load",
+    "java.security.MessageDigest.getInstance"
+  ]
+}
+

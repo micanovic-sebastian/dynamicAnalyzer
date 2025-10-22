@@ -1,0 +1,7 @@
+{
+  "blockedMethods": [
+    "java.lang.Runtime.exec",
+    "java.lang.ProcessBuilder.start",
+    "java.io.File.delete"
+  ]
+}
