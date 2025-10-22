@@ -9,7 +9,6 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
-import java.net.SocketAddress;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -24,10 +23,9 @@ import javax.crypto.Cipher;
 /**
  * A comprehensive test application to verify the JABS agent's blocking capabilities.
  */
-public class ComprehensiveApp {
+public class TestApp {
     public static void main(String[] args) {
 
-        System.out.println("--- Starting JABS Comprehensive Test Suite ---");
 
         // --- Original 7 Tests ---
         // Test 1: Runtime.exec()

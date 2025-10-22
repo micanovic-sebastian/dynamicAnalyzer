@@ -3,14 +3,14 @@ package bachelor.config;
 import java.util.Collections;
 import java.util.List;
 
-// This POJO maps directly to the structure of your config.json
+// config.json
 public class AgentConfiguration {
 
     private List<String> blockedPackages;
     private List<String> blockedClasses;
     private List<String> blockedMethods;
 
-    // Getters
+    // Getter
     public List<String> getBlockedPackages() {
         return blockedPackages != null ? blockedPackages : Collections.emptyList();
     }
@@ -23,7 +23,7 @@ public class AgentConfiguration {
         return blockedMethods != null ? blockedMethods : Collections.emptyList();
     }
 
-    // Setters (used by Jackson for deserialization)
+    // Setter
     public void setBlockedPackages(List<String> blockedPackages) {
         this.blockedPackages = blockedPackages;
     }

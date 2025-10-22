@@ -4,7 +4,7 @@
 # --- Konfiguration ---
 # Parameter für die Konfigurationsdatei, mit einem Standardwert
 param (
-    [string]$configFile = "config2.json"
+    [string]$configFile = "config.json"
 )
 
 # Pfade zu den JAR-Dateien des Agenten und der Anwendung, relativ zum Projektstamm.
