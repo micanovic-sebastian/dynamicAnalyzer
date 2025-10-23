@@ -34,7 +34,6 @@ $jvmArgs = @(
 )
 
 # --- Ausführung ---
-Write-Host "Anwendung wird mit JABS-Agenten gestartet..."
 Write-Host "Agenten-JAR: $agentJar"
 Write-Host "App-JAR:     $appJar"
 Write-Host "Config-Datei: $configFile"

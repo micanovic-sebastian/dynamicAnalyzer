@@ -3,7 +3,7 @@ package bachelor.advice;
 import net.bytebuddy.asm.Advice;
 import java.lang.reflect.Executable;
 
-public class GenericBlockAdvice {
+public class BlockingAdvice {
 
     @Advice.OnMethodEnter
     public static void onEnter(@Advice.Origin Executable executable) {

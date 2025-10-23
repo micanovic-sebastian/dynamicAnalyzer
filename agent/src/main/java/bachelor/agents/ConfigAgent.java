@@ -20,8 +20,8 @@ public class ConfigAgent {
     // A single, generic advice class
     private static final String GENERIC_ADVICE_CLASS = "bachelor.advice.GenericBlockAdvice";
 
-    // This list is still useful for forcing retransformation of core JDK classes
-    // that might be loaded before the agent.
+    // Bestimmte JDK-Kernklassen müssen werden, weil diese vom Bootstrap-Classloader geladen werden
+    // und der Java Agent
     private static List<String> classesToRetransform = Arrays.asList(
             "java.io.File", "java.nio.file.Files", "java.lang.reflect.Method",
             "java.io.OutputStream", "java.io.Writer", "java.io.InputStream",
@@ -53,7 +53,7 @@ public class ConfigAgent {
             }
             builder = builder.type(packageMatcher.and(not(isInterface())))
                     .transform(new AgentBuilder.Transformer.ForAdvice()
-                            .include(MyAgent.class.getClassLoader())
+                            .include(ConfigAgent.class.getClassLoader())
                             .advice(isMethod().or(isConstructor()), GENERIC_ADVICE_CLASS));
         }
 
@@ -67,7 +67,7 @@ public class ConfigAgent {
             }
             builder = builder.type(classMatcher.and(not(isInterface())))
                     .transform(new AgentBuilder.Transformer.ForAdvice()
-                            .include(MyAgent.class.getClassLoader())
+                            .include(ConfigAgent.class.getClassLoader())
                             .advice(isMethod().or(isConstructor()), GENERIC_ADVICE_CLASS));
         }
 
@@ -86,7 +86,7 @@ public class ConfigAgent {
 
                 builder = builder.type(named(className))
                         .transform(new AgentBuilder.Transformer.ForAdvice()
-                                .include(MyAgent.class.getClassLoader())
+                                .include(ConfigAgent.class.getClassLoader())
                                 .advice(named(methodName), GENERIC_ADVICE_CLASS));
 
             } catch (Exception e) {
