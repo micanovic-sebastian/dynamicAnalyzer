@@ -10,7 +10,8 @@ public class AgentConfiguration {
     private List<String> blockedClasses;
     private List<String> blockedMethods;
 
-    // Getter
+
+
     public List<String> getBlockedPackages() {
         return blockedPackages != null ? blockedPackages : Collections.emptyList();
     }
@@ -23,16 +24,4 @@ public class AgentConfiguration {
         return blockedMethods != null ? blockedMethods : Collections.emptyList();
     }
 
-    // Setter
-    public void setBlockedPackages(List<String> blockedPackages) {
-        this.blockedPackages = blockedPackages;
-    }
-
-    public void setBlockedClasses(List<String> blockedClasses) {
-        this.blockedClasses = blockedClasses;
-    }
-
-    public void setBlockedMethods(List<String> blockedMethods) {
-        this.blockedMethods = blockedMethods;
-    }
 }

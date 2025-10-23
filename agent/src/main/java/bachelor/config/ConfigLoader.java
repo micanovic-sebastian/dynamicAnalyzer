@@ -6,10 +6,11 @@ import java.io.IOException;
 
 public class ConfigLoader {
 
+
     public static AgentConfiguration loadConfig(String configPath) {
         if (configPath == null || configPath.isEmpty()) {
             System.err.println("No config path provided. No blocks will be applied.");
-            return new AgentConfiguration(); // Returns empty list
+            return new AgentConfiguration();
         }
 
         File configFile = new File(configPath);

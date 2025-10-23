@@ -17,11 +17,9 @@ import static net.bytebuddy.matcher.ElementMatchers.*;
 
 public class ConfigAgent {
 
-    // A single, generic advice class
     private static final String GENERIC_ADVICE_CLASS = "bachelor.advice.GenericBlockAdvice";
 
-    // Bestimmte JDK-Kernklassen müssen werden, weil diese vom Bootstrap-Classloader geladen werden
-    // und der Java Agent
+    // Bestimmte JDK-Kernklassen müssen neugeladen werden, weil diese vom Bootstrap-Classloader geladen werden
     private static List<String> classesToRetransform = Arrays.asList(
             "java.io.File", "java.nio.file.Files", "java.lang.reflect.Method",
             "java.io.OutputStream", "java.io.Writer", "java.io.InputStream",
@@ -29,22 +27,23 @@ public class ConfigAgent {
             "java.lang.Class", "java.lang.System"
     );
 
-    public static void premain(String agentArguments, Instrumentation instrumentation) throws IOException {
+    public static void premain(String agentArguments, Instrumentation instrumentation) {
 
-        // agentArguments is the path to config.json
+        // Parameter parsen
         AgentConfiguration config = ConfigLoader.loadConfig(agentArguments);
 
-        // Start building the AgentBuilder
+        // ByteBuddy und Abhängigkeiten von ByteBuddy müssen ignoriert werden
         AgentBuilder builder = new AgentBuilder.Default()
                 .ignore(ElementMatchers.nameStartsWith("java.util.concurrent"))
-                .ignore(ElementMatchers.nameStartsWith("net.bytebuddy")) // Ignore self
-                .ignore(ElementMatchers.nameStartsWith("com.fasterxml.jackson")) // Ignore parser
+                .ignore(ElementMatchers.nameStartsWith("net.bytebuddy"))
+                .ignore(ElementMatchers.nameStartsWith("com.fasterxml.jackson")) // Ignore parse
                 .with(RETRANSFORMATION)
                 .with(AgentBuilder.TypeStrategy.Default.REDEFINE);
-//                .with(AgentBuilder.Listener.StreamWriting.toSystemError()); // Uncomment for debugging
+        // Ist für Debugging sehr nützlich, die Meldungen sind aber für den Normalbetrieb zu detailliert
+        //      .with(AgentBuilder.Listener.StreamWriting.toSystemError());
 
-        // 1. Block Packages
-        // This blocks *all methods* in *all classes* starting with the package name.
+        // Es können auch Packages, Klassen und natürlich auch Methoden blockiert werden
+        // Die Daten werden hier aus der JSON-Datei ausgelesen dem AgentBuildeer übergeben
         if (!config.getBlockedPackages().isEmpty()) {
             ElementMatcher.Junction<TypeDescription> packageMatcher = ElementMatchers.none();
             for (String pkg : config.getBlockedPackages()) {
@@ -57,8 +56,7 @@ public class ConfigAgent {
                             .advice(isMethod().or(isConstructor()), GENERIC_ADVICE_CLASS));
         }
 
-        // 2. Block Classes
-        // This blocks *all methods* in a specific class.
+        // Und hier für Klassen
         if (!config.getBlockedClasses().isEmpty()) {
             ElementMatcher.Junction<TypeDescription> classMatcher = ElementMatchers.none();
             for (String cls : config.getBlockedClasses()) {
@@ -71,11 +69,12 @@ public class ConfigAgent {
                             .advice(isMethod().or(isConstructor()), GENERIC_ADVICE_CLASS));
         }
 
-        // 3. Block Specific Methods
-        // This blocks a single, named method in a named class.
+        // Hier werden auch die einzelnen Methoden abgefangen
         for (String methodSignature : config.getBlockedMethods()) {
             System.out.println(methodSignature);
             try {
+                // Nach dem letzten Punkt kommt der Methodenname, z.B. bei java.lang.reflect.Method.invoke
+                // ist invoke der Methodenname
                 int lastDot = methodSignature.lastIndexOf('.');
                 if (lastDot == -1 || lastDot == methodSignature.length() - 1) {
                     System.err.println("### Agent: Invalid method signature in config: " + methodSignature);
@@ -94,17 +93,20 @@ public class ConfigAgent {
             }
         }
 
-        // Finally, install the agent
+        // Und dann wird der Agent
         builder.installOn(instrumentation);
 
-        // Retransformation logic remains the same (and is still important)
+        // Hier werden die JDK-Kernklassen die bereits vom Bootstrap-Classloader geladen wurden,
+        // nochmal geladen
         try {
             for (String clazzString : classesToRetransform) {
                 try {
                     Class<?> clazz = Class.forName(clazzString);
                     instrumentation.retransformClasses(clazz);
                 } catch (ClassNotFoundException e) {
-                    // Ignore: Class might not be used, e.g. sun.nio.ch.ChannelOutputStream
+                    // Die Klassen müssen nicht unbedingt vom Bootstrap-Classloader geladen werden
+                    // wenn diese im Code der zu analysieren ist nicht vorkommen, und Fehlerbehandlung ist in diesem Fall
+                    // auch nicht möglich
                 }
             }
         } catch (Exception e) {
