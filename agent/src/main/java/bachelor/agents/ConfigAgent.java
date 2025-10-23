@@ -6,8 +6,9 @@ import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.matcher.ElementMatcher;
 import net.bytebuddy.matcher.ElementMatchers;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import java.io.IOException;
 import java.lang.instrument.Instrumentation;
 import java.util.Arrays;
 import java.util.List;
@@ -15,9 +16,16 @@ import java.util.List;
 import static net.bytebuddy.agent.builder.AgentBuilder.RedefinitionStrategy.RETRANSFORMATION;
 import static net.bytebuddy.matcher.ElementMatchers.*;
 
+/**
+ * Hauptklasse des Java-Agenten
+ * Hier werden Klassen zur Laufzeit instrumentiert und
+ * Aufrufe anhand der Konfigurationsdatei blockiert
+ */
 public class ConfigAgent {
 
-    private static final String GENERIC_ADVICE_CLASS = "bachelor.advice.GenericBlockAdvice";
+    private static final Logger logger = LogManager.getLogger(ConfigAgent.class);
+
+    private static final String GENERIC_ADVICE_CLASS = "bachelor.advice.BlockingAdvice";
 
     // Bestimmte JDK-Kernklassen müssen neugeladen werden, weil diese vom Bootstrap-Classloader geladen werden
     private static List<String> classesToRetransform = Arrays.asList(
@@ -27,7 +35,14 @@ public class ConfigAgent {
             "java.lang.Class", "java.lang.System"
     );
 
+    /**
+     * Die premain-Methode ist der Einsprungpunkt für den Java-Agenten
+     * @param agentArguments Argumente die dem Agenten übergeben werden (hier der Pfad zur config)
+     * @param instrumentation Das Instrumentation-API-Objekt von der JVM
+     */
     public static void premain(String agentArguments, Instrumentation instrumentation) {
+
+        logger.info("Starting JABS Agent...");
 
         // Parameter parsen
         AgentConfiguration config = ConfigLoader.loadConfig(agentArguments);
@@ -37,6 +52,7 @@ public class ConfigAgent {
                 .ignore(ElementMatchers.nameStartsWith("java.util.concurrent"))
                 .ignore(ElementMatchers.nameStartsWith("net.bytebuddy"))
                 .ignore(ElementMatchers.nameStartsWith("com.fasterxml.jackson")) // Ignore parse
+                .ignore(ElementMatchers.nameStartsWith("org.apache.logging.log4j")) // *** Ignore Log4j2 ***
                 .with(RETRANSFORMATION)
                 .with(AgentBuilder.TypeStrategy.Default.REDEFINE);
         // Ist für Debugging sehr nützlich, die Meldungen sind aber für den Normalbetrieb zu detailliert
@@ -47,7 +63,7 @@ public class ConfigAgent {
         if (!config.getBlockedPackages().isEmpty()) {
             ElementMatcher.Junction<TypeDescription> packageMatcher = ElementMatchers.none();
             for (String pkg : config.getBlockedPackages()) {
-                System.out.println(pkg);
+                logger.info("Blocking package: {}", pkg);
                 packageMatcher = packageMatcher.or(nameStartsWith(pkg + "."));
             }
             builder = builder.type(packageMatcher.and(not(isInterface())))
@@ -60,7 +76,7 @@ public class ConfigAgent {
         if (!config.getBlockedClasses().isEmpty()) {
             ElementMatcher.Junction<TypeDescription> classMatcher = ElementMatchers.none();
             for (String cls : config.getBlockedClasses()) {
-                System.out.println(cls);
+                logger.info("Blocking class: {}", cls);
                 classMatcher = classMatcher.or(named(cls));
             }
             builder = builder.type(classMatcher.and(not(isInterface())))
@@ -71,13 +87,13 @@ public class ConfigAgent {
 
         // Hier werden auch die einzelnen Methoden abgefangen
         for (String methodSignature : config.getBlockedMethods()) {
-            System.out.println(methodSignature);
+            logger.info("Blocking method: {}", methodSignature);
             try {
                 // Nach dem letzten Punkt kommt der Methodenname, z.B. bei java.lang.reflect.Method.invoke
                 // ist invoke der Methodenname
                 int lastDot = methodSignature.lastIndexOf('.');
                 if (lastDot == -1 || lastDot == methodSignature.length() - 1) {
-                    System.err.println("### Agent: Invalid method signature in config: " + methodSignature);
+                    logger.error("### Agent: Invalid method signature in config: {}", methodSignature);
                     continue;
                 }
                 String className = methodSignature.substring(0, lastDot);
@@ -89,29 +105,33 @@ public class ConfigAgent {
                                 .advice(named(methodName), GENERIC_ADVICE_CLASS));
 
             } catch (Exception e) {
-                System.err.println("### Agent: Error processing method signature '" + methodSignature + "': " + e.getMessage());
+                logger.error("### Agent: Error processing method signature '{}'", methodSignature, e);
             }
         }
 
-        // Und dann wird der Agent
+        // Agent wird hiermit endglültig installiert
         builder.installOn(instrumentation);
+        logger.info("Agent installed.");
 
         // Hier werden die JDK-Kernklassen die bereits vom Bootstrap-Classloader geladen wurden,
         // nochmal geladen
         try {
+            logger.debug("Attempting to retransform core JDK classes...");
             for (String clazzString : classesToRetransform) {
                 try {
                     Class<?> clazz = Class.forName(clazzString);
                     instrumentation.retransformClasses(clazz);
+                    logger.debug("Retransformed: {}", clazzString);
                 } catch (ClassNotFoundException e) {
                     // Die Klassen müssen nicht unbedingt vom Bootstrap-Classloader geladen werden
                     // wenn diese im Code der zu analysieren ist nicht vorkommen, und Fehlerbehandlung ist in diesem Fall
                     // auch nicht möglich
+                    logger.trace("Class not found for retransformation, skipping: {}", clazzString);
                 }
             }
+            logger.debug("Core JDK class retransformation complete.");
         } catch (Exception e) {
-            System.err.println("Error during retransformation request: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("Error during retransformation request", e);
         }
     }
 }
